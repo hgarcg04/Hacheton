@@ -33,6 +33,13 @@
     .modal{background:white;padding:18px;border-radius:10px;max-width:900px;width:95%;max-height:85vh;overflow:auto;box-shadow:0 12px 40px rgba(2,10,30,0.45)}
     .modal h3{margin-top:0}
     pre{background:#0b1b2a;color:#cfe8ff;padding:8px;border-radius:6px;overflow:auto}
+     /* 🔹 Línea azul de fondo del menú */
+    .navbar {background: #90abdd;border-top: 2px solid #90abdd;border-bottom: 2px solid #90abdd;}
+    .nav-menu {list-style: none;display: flex;justify-content: center;gap: 25px;padding: 10px 0;margin: 0;}
+    .nav-menu a {color: #ffffff;text-decoration: none;font-weight: 500;transition: color 0.2s, border-bottom 0.2s;padding-bottom: 3px;}
+
+    .nav-menu a:hover {color: #000000;border-bottom: 2px solid #000000;}
+
   </style>
 </head>
 <body>
@@ -41,6 +48,15 @@
       <h1>Impact Simulator — real NEOS and manual meteorite</h1>
       <p class="muted">Two modes: <strong>real NEOs</strong> — downloads from NeoWs and makes an automatic estimation of an impact point (aprox.); <strong>Manual</strong> — select a meteorite on the map making click.</p>
     </div>
+    <nav class="navbar">
+      <ul class="nav-menu">
+        <li><a href="https://hgarcg04.github.io/Hacheton/hacheton6.html">Impact-simulator</a></li>
+        <li><a href="#data">NEO Data</a></li>
+        <li><a href="#simulation">Simulation</a></li>
+        <li><a href="#risk">Risk Assessment</a></li>
+        <li><a href="#about">About meteor madness</a></li>
+      </ul>
+    </nav>
   </header>
 
   <main class="container">
@@ -657,6 +673,7 @@ document.getElementById('export-btn').onclick = async ()=>{
   </script>
 </body>
 </html>
+
 
 
 
