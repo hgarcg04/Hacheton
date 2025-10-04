@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Impact Simulator — Impactor-2025 (Demo)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root{--blue:#0b74da}
+    body{font-family:Inter,system-ui,Segoe UI,Helvetica,Arial;margin:0;background:#234;color:#06263b}
+    header{background:linear-gradient(90deg,#0b74da20,transparent);padding:12px;color:#ddd}
+    .container{max-width:1100px;margin:12px auto;padding:0 16px}
+    h1{margin:0;font-size:1.3rem}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:12px}
+    .card{background:white;border-radius:10px;padding:25px;box-shadow:0 6px 18px rgba(6,38,59,0.06)}
+    #map{height:520px;border-radius:8px}
+    label{display:block;font-size:0.9rem;margin-top:8px}
+    input, select, textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin-top:6px}
+    .btn{background:#09665e;color:white;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;margin-top:8px}
+    .small{font-size:0.85rem;color:rgb(192, 217, 243)}
+    .small2{font-size:0.85rem;color:rgb(10, 0, 0)}
+    pre{background:#071428;color:#cfe8ff;padding:8px;border-radius:6px;overflow:auto}
+    .result{background:#eef7ff;padding:8px;border-radius:6px;margin-top:8px}
+    footer{margin:18px 0;text-align:center;color:rgb(248, 248, 248)}
+    /* Tabs */
+    .tabs{display:flex;gap:8px;margin-top:8px}
+    .tab-btn{flex:1;text-align:center;padding:8px;border:none;cursor:pointer;background:#eee;border-radius:6px 6px 0 0}
+    .tab-btn.active{background:var(--blue);color:#fff}
+    .tab-content{display:none;border:1px solid #ddd;border-top:none;padding:8px;border-radius:0 0 6px 6px}
+    .tab-content.active{display:block}
+    .result_small{color:#000}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Impact Simulator — Demo para "Impactor-2025"</h1>
+      <p class="small">Herramienta educativa que integra datos públicos (NASA NEOs, USGS elevación) y cálculos aproximados para modelar escenarios de impacto y medidas de mitigación. <strong>Demo local</strong> — algunas llamadas requieren clave API o proxy por CORS.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <h2>Mapa de impacto</h2>
+        <div id="map"></div>
+        <p class="small2">Selecciona un punto en la Tierra (haz click) para situar un impacto. Puedes traer datos del NEO API o introducir parámetros manuales.</p>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn" id="clear-map">Borrar impacto</button>
+          <button class="btn" id="center-world" style="background:#c478ba">Centrar mundo</button>
+        </div>
+      </section>
+
+      <aside class="card">
+        <h3>Controles y calculadora</h3>
+        
+        <!-- Tabs -->
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="manual">Manual</button>
+          <button class="tab-btn" data-tab="nasa">NASA NEOs</button>
+        </div>
+
+        <!-- Manual tab -->
+        <div id="manual" class="tab-content active">
+          <label>Tamaño (diámetro) en metros</label>
+          <input id="diameter" type="number" value="50" />
+          <label>Velocidad de impacto (km/s)</label>
+          <input id="velocity" type="number" value="20" step="0.1" />
+          <label>Densidad (kg/m³)</label>
+          <input id="density" type="number" value="3000" />
+          <label>Ángulo respecto a la horizontal (grados)</label>
+          <input id="angle" type="number" value="45" />
+        </div>
+
+        <!-- NASA tab -->
+        <div id="nasa" class="tab-content">
+          <button class="btn" id="load-neos">Cargar lista de NEOs</button>
+          <select id="neo-list" style="margin-top:6px;width:100%"></select>
+          <div id="neo-details" class="small"></div>
+        </div>
+
+        <label style="margin-top:8px">Latitud / Longitud del impacto</label>
+        <input id="lat" placeholder="Lat" />
+        <input id="lon" placeholder="Lon" />
+
+        <button class="btn" id="simulate">Simular impacto</button>
+
+        <div id="output" class="result_small"></div>
+
+        <hr/>
+        <h4>Verificador de requisitos (rápido)</h4>
+        <p class="small2">Pega la descripción de tu proyecto y el verificador comprobará que incluyes elementos clave.</p>
+        <textarea id="plan-text" rows="6"></textarea>
+        <button class="btn" id="verify">Verificar plan</button>
+        <div id="verify-res" class="small"></div>
+      </aside>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <h3>Exportar / Compartir</h3>
+      <p class="small2">Puedes exportar la simulación como JSON.</p>
+      <button class="btn" id="export">Exportar JSON</button>
+      <a id="download" style="display:block;margin-top:8px"></a>
+    </section>
+
+    <footer>
+      Herramienta demo — integra APIs públicas (NASA NeoWs y USGS EPQS). Consultar documentación oficial para producción. 
+    </footer>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn=>{
+      btn.onclick=()=>{
+        document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      };
+    });
+
+    // Mapa
+    const map = L.map('map').setView([20,0],2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OSM'}).addTo(map);
+
+    let impactMarker = null; let impactCircle = null;
+
+    map.on('click', e=>{
+      const {lat,lng} = e.latlng;
+      document.getElementById('lat').value = lat.toFixed(5);
+      document.getElementById('lon').value = lng.toFixed(5);
+      placeImpact(lat,lng);
+    });
+
+    document.getElementById('clear-map').onclick = ()=>{ if(impactMarker) map.removeLayer(impactMarker); if(impactCircle) map.removeLayer(impactCircle); impactMarker=null; impactCircle=null; }
+    document.getElementById('center-world').onclick = ()=> map.setView([20,0],2);
+
+    function placeImpact(lat,lon){
+      if(impactMarker) map.removeLayer(impactMarker);
+      if(impactCircle) map.removeLayer(impactCircle);
+      impactMarker = L.marker([lat,lon]).addTo(map).bindPopup('Impact point').openPopup();
+    }
+
+    // Cargar lista de NEOs
+    document.getElementById('load-neos').onclick = async ()=>{
+      const key='DEMO_KEY';
+      const sel=document.getElementById('neo-list');
+      sel.innerHTML='<option>Cargando...</option>';
+      try{
+        const res=await fetch(`https://api.nasa.gov/neo/rest/v1/neo/browse?api_key=${key}`);
+        const data=await res.json();
+        sel.innerHTML='';
+        data.near_earth_objects.slice(0,20).forEach(neo=>{
+          const opt=document.createElement('option');
+          opt.value=neo.id;
+          opt.textContent=`${neo.name} — ${(neo.estimated_diameter.meters.estimated_diameter_max).toFixed(1)} m`;
+          sel.appendChild(opt);
+        });
+      }catch(e){ sel.innerHTML='<option>Error al cargar</option>'; }
+    };
+
+    // Selección NEO
+    document.getElementById('neo-list').onchange = async (e)=>{
+      const id=e.target.value; const key='DEMO_KEY';
+      const res=await fetch(`https://api.nasa.gov/neo/rest/v1/neo/${id}?api_key=${key}`);
+      const data=await res.json();
+      const avg=(data.estimated_diameter.meters.estimated_diameter_min+data.estimated_diameter.meters.estimated_diameter_max)/2;
+      const close=data.close_approach_data && data.close_approach_data[0];
+      document.getElementById('diameter').value=Math.round(avg);
+      if(close){ document.getElementById('velocity').value=parseFloat(close.relative_velocity.kilometers_per_second).toFixed(2); }
+      document.getElementById('neo-details').innerHTML=`<b>${data.name}</b><br/>Diámetro: ${avg.toFixed(1)} m<br/>Velocidad: ${close ? parseFloat(close.relative_velocity.kilometers_per_second).toFixed(2)+' km/s':'N/A'}`;
+    };
+
+    // Simulación y cálculo
+    function computeImpact(params){
+      const d=params.diameter; const v=params.velocity*1000; const rho=params.density;
+      const r=d/2; const volume=(4/3)*Math.PI*Math.pow(r,3);
+      const mass=volume*rho;
+      const energyJ=0.5*mass*v*v;
+      const tnt_kilotons=energyJ/4.184e12;
+      const tnt_megatons=tnt_kilotons/1000;
+      const D_tr_m=1000*Math.pow(Math.max(tnt_megatons,1e-9),1/3);
+      const blast_km=Math.pow(tnt_megatons,1/3)*10;
+      return {mass,energyJ,tnt_megatons,D_tr_m,blast_km};
+    }
+
+    async function getElevation(lat,lon){
+      try{
+        const url=`https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&units=Meters&wkid=4326`;
+        const res=await fetch(url); if(!res.ok) throw new Error('EPQS error');
+        const j=await res.json(); return j && j.value && j.value.length>0 ? j.value[0].elevation : null;
+      }catch(e){ return null; }
+    }
+
+    document.getElementById('simulate').onclick=async()=>{
+      const diameter=parseFloat(document.getElementById('diameter').value);
+      const velocity=parseFloat(document.getElementById('velocity').value);
+      const density=parseFloat(document.getElementById('density').value);
+      const angle=parseFloat(document.getElementById('angle').value);
+      const lat=parseFloat(document.getElementById('lat').value);
+      const lon=parseFloat(document.getElementById('lon').value);
+      if(isNaN(diameter)||isNaN(velocity)||isNaN(density)){ alert('Introduce parámetros válidos'); return; }
+      const out=computeImpact({diameter,velocity,density,angle});
+      let elev=null;
+      if(!isNaN(lat)&&!isNaN(lon)){
+        elev=await getElevation(lat,lon);
+        placeImpact(lat,lon);
+        if(impactCircle) map.removeLayer(impactCircle);
+        impactCircle=L.circle([lat,lon],{radius:out.blast_km*1000,color:'#b33',opacity:0.35}).addTo(map);
+        map.fitBounds(impactCircle.getBounds(),{maxZoom:8});
+      }
+      document.getElementById('output').innerHTML=`<strong>Resultados</strong><br/>Masa: ${Math.round(out.mass).toLocaleString()} kg<br/>Energía: ${Number(out.energyJ).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)<br/>Cráter: ${Math.round(out.D_tr_m)} m<br/>Blast: ${out.blast_km.toFixed(2)} km<br/>Elevación: ${elev!==null?elev+' m':'N/D'}`;
+    }
+
+    // Verificador
+    const required=[
+      {id:'neo',kw:['nasa','neo','neows','neo api','asteroide']},
+      {id:'usgs',kw:['usgs','epqs','elevation','tsunami','seismic']},
+      {id:'orbit',kw:['orbital','kepler','trajectory','orbit','semimajor','eccentricity']},
+      {id:'energy',kw:['energ','kinetic','tnt','crater']},
+      {id:'mitigation',kw:['deflect','mitigation','impacto','tractor']}
+    ];
+    document.getElementById('verify').onclick=()=>{
+      const txt=document.getElementById('plan-text').value.toLowerCase();
+      const res=required.map(r=>({id:r.id,ok:r.kw.some(k=>txt.includes(k))}));
+      const el=document.getElementById('verify-res'); el.innerHTML='';
+      res.forEach(r=>{const div=document.createElement('div');div.textContent=(r.ok?'✔ ':'✖ ')+r.id;el.appendChild(div)});
+    };
+
+    // Export JSON
+    document.getElementById('export').onclick=()=>{
+      const payload={timestamp:new Date().toISOString(),
+        params:{diameter:document.getElementById('diameter').value,
+                velocity:document.getElementById('velocity').value,
+                density:document.getElementById('density').value,
+                angle:document.getElementById('angle').value,
+                lat:document.getElementById('lat').value,
+                lon:document.getElementById('lon').value}};
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.getElementById('download');a.href=url;a.download='simulation.json';a.textContent='Descargar simulation.json';
+    }
+  </script>
+</body>
+</html>
