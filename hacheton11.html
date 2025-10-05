@@ -349,15 +349,15 @@ map.on('click', e=>{
   if(!activeManual) return; // only for manual mode
   const {lat,lng} = e.latlng;
   if(manualMarker) map.removeLayer(manualMarker);
-  manualMarker = L.marker([lat,lng]).addTo(map).bindPopup('Meteorito manual (posición)').openPopup();
-  document.getElementById('manual-output').innerHTML = `Manual position on the map: ${lat.toFixed(4)}, ${lng.toFixed(4)}. Pulsa \"Simular meteorito manual\" para evaluar.`;
+  manualMarker = L.marker([lat,lng]).addTo(map).bindPopup('Manual meteorite (position)').openPopup();
+  document.getElementById('manual-output').innerHTML = `Manual position on the map: ${lat.toFixed(4)}, ${lng.toFixed(4)}. Press \"Simulate manual meteorite\" to evaluate.`;
 });
 
 /* NEOS load button: Loads next page on every click */
 document.getElementById('load-neos').onclick = async ()=>{
   const progressEl = document.getElementById('neo-progress');
   progressEl.style.display = 'block';
-  progressEl.innerText = 'Iniciando...';
+  progressEl.innerText = 'Starting...';
   try{
     if(currentNeoPage === 0 && aggregatedNEOs.length === 0){
       try{
@@ -367,7 +367,7 @@ document.getElementById('load-neos').onclick = async ()=>{
           if(obj && obj.data && Array.isArray(obj.data)){
             aggregatedNEOs = obj.data;
             populateNeoSelect(aggregatedNEOs);
-            progressEl.innerText = `Cargados desde cache: ${aggregatedNEOs.length} NEOs.`;
+            progressEl.innerText = `Downloaded from cache: ${aggregatedNEOs.length} NEOs.`;
           }
         }
       }catch(e){}
@@ -408,21 +408,21 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
     let html = `<b>${data.name} (${data.id})</b><br/>Diámetro estimado: ${ avg ? avg.toFixed(1)+' m' : 'N/D' }<br/>¿Potencialmente peligroso?: ${hazardous}<br/>`;
     const cad = (data.close_approach_data || []).find(c => c.orbiting_body === 'Earth') || (data.close_approach_data && data.close_approach_data[0]);
     if(!cad){
-      html += '<div class="muted">No hay datos de acercamiento a la Tierra en los registros.</div>';
+      html += '<div class="muted">There is no data of approachment to the Earth.</div>';
       infoEl.innerHTML = html;
       return;
     }
     const approachDate = cad.close_approach_date_full || cad.close_approach_date;
     html += `<div style="margin-top:6px"><b>Close approach:</b> ${approachDate}<br/>Miss distance: ${cad.miss_distance.kilometers} km<br/>Velocidad relativa: ${parseFloat(cad.relative_velocity.kilometers_per_second).toFixed(3)} km/s</div>`;
-    infoEl.innerHTML = html + '<div style="margin-top:6px">Calculando punto de mínima distancia (aprox.) — esto puede tardar un momento...</div>';
+    infoEl.innerHTML = html + '<div style="margin-top:6px">Calculating point of minimum distance (aprox.)</div>';
     const approx = await computeApproxImpactPoint(data, cad);
     if(!approx){
-      infoEl.innerHTML += '<div class="muted">No se pudo determinar punto aproximado (datos orbitales incompletos).</div>';
+      infoEl.innerHTML += '<div class="muted">There is no approach point (incomplete orbital data).</div>';
       return;
     }
     let resHtml = '';
     if(approx.impact){
-      resHtml += `<p style="color:var(--danger)"><b>Impacto estimado</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (estimado)</p>`;
+      resHtml += `<p style="color:var(--danger)"><b>Estimated impact</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (estimado)</p>`;
     } else {
       resHtml += `<p><b>Punto de mínima distancia sobre el globo</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (distancia mínima ${Math.round(approx.distance_km).toLocaleString()} km)</p>`;
     }
