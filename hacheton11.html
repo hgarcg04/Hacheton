@@ -350,7 +350,7 @@ map.on('click', e=>{
   const {lat,lng} = e.latlng;
   if(manualMarker) map.removeLayer(manualMarker);
   manualMarker = L.marker([lat,lng]).addTo(map).bindPopup('Meteorito manual (posición)').openPopup();
-  document.getElementById('manual-output').innerHTML = `Posición manual situada en mapa: ${lat.toFixed(4)}, ${lng.toFixed(4)}. Pulsa \"Simular meteorito manual\" para evaluar.`;
+  document.getElementById('manual-output').innerHTML = `Manual position on the map: ${lat.toFixed(4)}, ${lng.toFixed(4)}. Pulsa \"Simular meteorito manual\" para evaluar.`;
 });
 
 /* NEOS load button: Loads next page on every click */
