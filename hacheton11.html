@@ -470,11 +470,11 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
             <li><b>Estimate population affected:</b> ${pop.affected.toLocaleString()} (heuristic)</li>
             <li><b>Recent earthquakes (30 days, 400 km):</b> ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
           </ul>
-          <p style="font-size:0.9rem;color:#666">Nota: todos los números son aproximados — el propagador orbital y las heurísticas son simplificaciones.</p>
+          <p style="font-size:0.9rem;color:#666">Important: every number are aproximated — the orbital propagator and the heuristics are simplified.</p>
         `;
         openModal(modalHtml);
       } catch(modErr) {
-        console.warn('No se pudo mostrar modal NEO:', modErr);
+        console.warn('It could not be shown:', modErr);
       }
 
     }
@@ -563,15 +563,15 @@ document.getElementById('simulate-manual').onclick = async ()=>{
   const elev = await getElevation(params.lat, params.lon);
   const quakes = await getRecentQuakes(params.lat, params.lon, 400);
   const pop = estimateAffected(out.blast_km, elev, params.lat, params.lon);
-  document.getElementById('manual-output').innerHTML = `<strong>Resultados (manual)</strong><br/>Energy: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)<br/>Elevación: ${elev !== null ? elev+' m' : 'N/D'}<br/>Affected Poblation (estimated): ${pop.affected.toLocaleString()}`;
+  document.getElementById('manual-output').innerHTML = `<strong>Results (manual)</strong><br/>Energy: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)<br/>Elevation: ${elev !== null ? elev+' m' : 'N/D'}<br/>Affected population (estimated): ${pop.affected.toLocaleString()}`;
   const html = `<p><b>Manual Impact — ubication:</b> ${params.lat.toFixed(4)}, ${params.lon.toFixed(4)}</p>
     <ul>
       <li>Energy: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt)</li>
       <li>Crater diamater (est): ${Math.round(out.D_tr)} m</li>
       <li>Radio blast (aprox): ${out.blast_km.toFixed(2)} km</li>
-      /*<li>Elevación (USGS EPQS): ${elev !== null ? elev + ' m' : 'No disponible'}</li>*/
-      <li>Estimated population affected: ${pop.affected.toLocaleString()} (heurística)</li>
-      <li>Recent earthquakes (30 days, 400 km): ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
+      <li>Elevation (USGS EPQS): ${elev !== null ? elev + ' m' : 'Not available'}</li>
+      <li>Estimated population affected: ${pop.affected.toLocaleString()} (heuristic)</li>
+      <li>Recent earthquakes (30 days, 400 km): ${quakes && quakes.features ? quakes.features.length : 'Not available'}</li>
     </ul>`;
   openModal(html);
   L.circle([params.lat, params.lon], {radius: out.blast_km*1000, color:'#b33', opacity:0.25}).addTo(map);
