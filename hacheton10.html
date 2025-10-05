@@ -466,7 +466,7 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
             <li><b>Energy:</b> ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)</li>
             <li><b>Crater diameter (est):</b> ${Math.round(out.D_tr)} m</li>
             <li><b>Radio blast (aprox):</b> ${out.blast_km.toFixed(2)} km</li>
-            /* <li><b>Elevatin (USGS EPQS):</b> ${elev !== null ? elev + ' m' : 'No disponible'}</li> -->*/
+
             <li><b>Estimate population affected:</b> ${pop.affected.toLocaleString()} (heuristic)</li>
             <li><b>Recent earthquakes (30 days, 400 km):</b> ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
           </ul>
@@ -683,3 +683,4 @@ document.getElementById('export-btn').onclick = async ()=>{
   </script>
 </body>
 </html>
+
