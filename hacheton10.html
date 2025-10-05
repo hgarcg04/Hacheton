@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Impact Simulator — NEOS real + Manual (fix población)</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root{--accent:#0b74da;--ok:#2b9348;--danger:#b33}
+    body{font-family:Inter,system-ui,Segoe UI,Helvetica,Arial;margin:0;background:#f3f6fb;color:#06263b}
+    header{background:linear-gradient(90deg,#0b74da22,transparent);padding:14px}
+    .container{max-width:1100px;margin:12px auto;padding:0 16px}
+    h1{margin:0;font-size:1.4rem}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:12px}
+    .card{background:white;border-radius:10px;padding:14px;box-shadow:0 6px 18px rgba(8,20,40,0.06)}
+    #map{height:520px;border-radius:8px}
+    label{display:block;font-size:0.9rem;margin-top:8px}
+    input, select, textarea, button{font-family:inherit}
+    input, select, textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin-top:6px}
+    .btn{background:var(--accent);color:white;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;margin-top:8px}
+    .btn.alt{background:#09665e}
+    .small{font-size:0.85rem;color:#334}
+    .muted{font-size:0.85rem;color:#667}
+    .tabs{display:flex;gap:8px;margin-top:8px}
+    .tab-btn{flex:1;text-align:center;padding:8px;border:none;cursor:pointer;background:#eee;border-radius:6px 6px 0 0}
+    .tab-btn.active{background:var(--accent);color:#fff}
+    .tab-content{display:none;border:1px solid #ddd;border-top:none;padding:8px;border-radius:0 0 6px 6px}
+    .tab-content.active{display:block}
+    .result{background:#eef7ff;padding:8px;border-radius:6px;margin-top:8px}
+    .progress{font-size:0.85rem;color:#444;margin-top:6px}
+    /* Modal */
+    .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(4,12,20,0.45);align-items:center;justify-content:center;z-index:9999}
+    .modal{background:white;padding:18px;border-radius:10px;max-width:900px;width:95%;max-height:85vh;overflow:auto;box-shadow:0 12px 40px rgba(2,10,30,0.45)}
+    .modal h3{margin-top:0}
+    pre{background:#0b1b2a;color:#cfe8ff;padding:8px;border-radius:6px;overflow:auto}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Impact Simulator — NEOS reales y meteorito manual</h1>
+      <p class="muted">Dos modos: <strong>NEOs (reales)</strong> — carga desde NeoWs y estimación automática de punto de impacto (aprox.); <strong>Manual</strong> — coloca un meteorito en el mapa haciendo click.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="grid">
+      <section class="card">
+        <h2>Mapa</h2>
+        <div id="map"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn alt" id="center-world">Centrar mundo</button>
+          <button class="btn" id="clear-map">Borrar capas</button>
+        </div>
+        <div id="map-hint" class="muted" style="margin-top:8px">Click en el mapa para situar un meteorito manual (pestaña Manual).</div>
+      </section>
+
+      <aside class="card">
+        <h3>Controles</h3>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="neos">NEOs (reales)</button>
+          <button class="tab-btn" data-tab="manual">Meteorito manual</button>
+        </div>
+
+        <!-- NEOS (reales) -->
+        <div id="neos" class="tab-content active">
+          <div style="display:flex;gap:8px">
+            <button class="btn" id="load-neos">Cargar más NEOs (página siguiente)</button>
+          </div>
+
+          <div class="progress" id="neo-progress" style="display:none"></div>
+
+          <label style="margin-top:8px">Buscar por nombre (filtrar resultados ya cargados)</label>
+          <input id="neo-search" placeholder="Escribe parte del nombre..." />
+
+          <label style="margin-top:8px">Lista NEOS (seleccionar)</label>
+          <select id="neo-list" size="8" style="width:100%"></select>
+
+          <div id="neo-details" class="result muted" style="margin-top:8px">Selecciona un NEO para ver detalles y estimación de punto de impacto.</div>
+          <div class="muted" style="margin-top:6px">Nota: el cálculo del punto de impacto es una aproximación (propagador Kepleriano simplificado).</div>
+        </div>
+
+        <!-- Manual -->
+        <div id="manual" class="tab-content">
+          <label>Diámetro (m)</label><input id="m_diameter" type="number" value="50" />
+          <label>Velocidad (km/s)</label><input id="m_velocity" type="number" value="20" step="0.1" />
+          <label>Densidad (kg/m³)</label><input id="m_density" type="number" value="3000" />
+          <label>Ángulo (°)</label><input id="m_angle" type="number" value="45" />
+          <p class="muted" style="margin-top:8px">Para colocar el punto de impacto, cambia a la pestaña 'Mapa' y haz click en la ubicación deseada; el marcador se asociará al meteorito manual.</p>
+          <button class="btn" id="simulate-manual">Simular meteorito manual</button>
+          <div id="manual-output" class="result muted" style="margin-top:8px"></div>
+        </div>
+
+      </aside>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <h3>Exportar / Compartir</h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn" id="export-btn">Exportar (JSON)</button>
+        <a id="download" style="margin-left:8px"></a>
+      </div>
+      <p class="muted" style="margin-top:8px">Exporta la simulación actual (NEO seleccionado o meteorito manual) incluyendo datos NEOWS y USGS consultados cuando proceda.</p>
+    </section>
+
+    <footer style="margin-top:12px" class="muted">
+      Demo educativa — Para producción se recomienda mover la carga masiva de NEOS a un backend con caché y control de tasa.
+    </footer>
+  </main>
+
+  <!-- Modal de evaluación de riesgos -->
+  <div id="modal" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:9999">
+    <div class="modal">
+      <button id="modal-close" style="float:right;border:none;background:#eee;border-radius:6px;padding:6px;cursor:pointer">Cerrar</button>
+      <h3>Evaluación de riesgos (USGS + estimaciones)</h3>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+/* ============================
+   Constantes y utilidades
+   ============================ */
+const AU_KM = 149597870.7;
+const EARTH_RADIUS_KM = 6371;
+const EARTH_RADIUS_AU = EARTH_RADIUS_KM / AU_KM;
+const kGaussian = 0.01720209895; // Gaussian gravitational constant (rad/day)
+function deg2rad(d){ return d * Math.PI/180; }
+function rad2deg(r){ return r * 180/Math.PI; }
+function mod(a,m){ return ((a % m) + m) % m; }
+
+/* Constants for population heuristics */
+// Fuente para población mundial (estimación 2025): Worldometers / UN resumen (ver documentación del código o README si se requiere fuente exacta)
+const WORLD_POPULATION = 8231613070; // 8,231,613,070 (aprox. 2025).
+// Área de tierra de la Tierra (km²)
+const EARTH_LAND_AREA_KM2 = 148940000; // aproximadamente 148,940,000 km²
+
+/* Julian date from JS Date (UTC) */
+function dateToJD(date){
+  // date: JS Date in UTC
+  const Y = date.getUTCFullYear();
+  const M = date.getUTCMonth()+1;
+  const D = date.getUTCDate() + (date.getUTCHours()/24) + (date.getUTCMinutes()/1440) + (date.getUTCSeconds()/86400);
+  let A = Math.floor((14 - M)/12);
+  let y = Y + 4800 - A;
+  let m = M + 12*A - 3;
+  let JDN = Math.floor(D) + Math.floor((153*m + 2)/5) + 365*y + Math.floor(y/4) - Math.floor(y/100) + Math.floor(y/400) - 32045;
+  // add fractional day
+  const frac = (date.getUTCHours() - 12)/24 + date.getUTCMinutes()/1440 + date.getUTCSeconds()/86400 + date.getUTCMilliseconds()/86400000;
+  return JDN + frac;
+}
+
+/* GMST degrees at JD (approx Meeus) */
+function gmstDegrees(JD){
+  const T = (JD - 2451545.0) / 36525.0;
+  let GMST = 280.46061837 + 360.98564736629*(JD - 2451545.0) + 0.000387933*T*T - (T*T*T)/38710000;
+  return mod(GMST, 360);
+}
+
+/* Kepler solver (Newton-Raphson) */
+function solveKepler(M, e, tol=1e-8){
+  // M in radians
+  let E = (e < 0.8) ? M : Math.PI;
+  let iter = 0;
+  while(iter < 60){
+    const f = E - e*Math.sin(E) - M;
+    const fp = 1 - e*Math.cos(E);
+    const dE = -f / fp;
+    E += dE;
+    if(Math.abs(dE) < tol) break;
+    iter++;
+  }
+  return E;
+}
+
+/* ============================
+   Propagador Kepleriano simplificado
+   ============================ */
+function orbitalElementsToHelioEcl(a, e, i_deg, Omega_deg, omega_deg, M_deg, epochJD, targetJD){
+  const a_num = Number(a);
+  const e_num = Number(e);
+  const i = deg2rad(Number(i_deg || 0));
+  const Omega = deg2rad(Number(Omega_deg || 0));
+  const omega = deg2rad(Number(omega_deg || 0));
+  const M0 = deg2rad(Number(M_deg || 0));
+  const epoch = Number(epochJD);
+  const dt = targetJD - epoch; // days
+  const n = kGaussian * Math.pow(a_num, -1.5); // rad/day
+  const M = M0 + n * dt;
+  const Mnorm = mod(M, 2*Math.PI);
+  const E = solveKepler(Mnorm, e_num);
+  const cosE = Math.cos(E), sinE = Math.sin(E);
+  const nu = 2 * Math.atan2( Math.sqrt(1+e_num)*Math.sin(E/2), Math.sqrt(1-e_num)*Math.cos(E/2) );
+  const r = a_num * (1 - e_num * cosE); // distance in AU
+  const x_orb = r * Math.cos(nu);
+  const y_orb = r * Math.sin(nu);
+  const cosO = Math.cos(Omega), sinO = Math.sin(Omega);
+  const cosw_nu = Math.cos(omega + nu), sinw_nu = Math.sin(omega + nu);
+  const cosi = Math.cos(i), sini = Math.sin(i);
+  const x_ecl = r * (cosO * cosw_nu - sinO * sinw_nu * cosi);
+  const y_ecl = r * (sinO * cosw_nu + cosO * sinw_nu * cosi);
+  const z_ecl = r * (sinw_nu * sini);
+  return {x: x_ecl, y: y_ecl, z: z_ecl, r, nu: rad2deg(nu)};
+}
+
+function earthHeliocentricPosJD(JD){
+  const n = JD - 2451545.0;
+  let L = 280.46061837 + 0.98564736629 * n;
+  let g = 357.52772333 + 0.9856002831 * n;
+  const g_rad = deg2rad(g);
+  const lambda = deg2rad( L + 1.914666471 * Math.sin(g_rad) + 0.019994643 * Math.sin(2*g_rad) );
+  const x = Math.cos(lambda) * -1.0; // AU
+  const y = Math.sin(lambda) * -1.0;
+  const z = 0.0;
+  return {x,y,z};
+}
+
+function eclToEq(x,y,z){
+  const eps = deg2rad(23.439291);
+  const xeq = x;
+  const yeq = y * Math.cos(eps) - z * Math.sin(eps);
+  const zeq = y * Math.sin(eps) + z * Math.cos(eps);
+  return {x: xeq, y: yeq, z: zeq};
+}
+
+function vecToRADec(x,y,z){
+  const r_xy = Math.sqrt(x*x + y*y);
+  const ra = mod(rad2deg(Math.atan2(y, x)), 360); // degrees
+  const dec = rad2deg(Math.atan2(z, r_xy));
+  const distAU = Math.sqrt(x*x + y*y + z*z);
+  return {ra, dec, distAU};
+}
+
+function radDecToLatLon(ra_deg, dec_deg, JD){
+  const GMST = gmstDegrees(JD); // degrees
+  let lon = mod(ra_deg - GMST + 180, 360) - 180; // -180..180
+  let lat = dec_deg;
+  return {lat, lon};
+}
+
+/* ============================
+   API NeoWs: carga paginada
+   ============================ */
+async function cachedFetch(url, key, ttl=24*3600*1000){
+  try{
+    const raw = localStorage.getItem(key);
+    if(raw){
+      const obj = JSON.parse(raw);
+      if(Date.now() - obj.time < ttl) return obj.data;
+    }
+  }catch(e){}
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  try{ localStorage.setItem(key, JSON.stringify({time:Date.now(), data})); }catch(e){}
+  return data;
+}
+
+let aggregatedNEOs = [];
+let currentNeoPage = 0;
+let totalNeoPages = null;
+
+async function loadNextNeosPage(progressEl=null){
+  const keyBase = 'neo_browse_page_';
+  const apiKey = 'L3htAwoutf2T1Maq0DixjNgLJd2tT1zwMeLTardl';
+  const baseUrl = `https://api.nasa.gov/neo/rest/v1/neo/browse?api_key=${apiKey}&page=`;
+  if(progressEl) {
+    progressEl.style.display = 'block';
+    progressEl.innerText = `Cargando página ${currentNeoPage}... (acumulado ${aggregatedNEOs.length} NEOs)`;
+  }
+  try{
+    const cacheKey = keyBase + currentNeoPage;
+    const data = await cachedFetch(`${baseUrl}${currentNeoPage}`, cacheKey, 24*3600*1000);
+    if(data && data.near_earth_objects){
+      aggregatedNEOs = aggregatedNEOs.concat(data.near_earth_objects);
+      try{ localStorage.setItem('neo_aggregated', JSON.stringify({time:Date.now(), data:aggregatedNEOs})); }catch(e){}
+    }
+    const pageSize = data && data.near_earth_objects ? data.near_earth_objects.length : 0;
+    if(data && data.page && data.page.total_pages !== undefined) {
+      totalNeoPages = data.page.total_pages;
+    }
+    if(progressEl) {
+      progressEl.innerText = `Cargada página ${currentNeoPage} (NEOs: ${aggregatedNEOs.length}).`;
+    }
+    currentNeoPage++;
+    return data.near_earth_objects || [];
+  }catch(err){
+    if(progressEl) progressEl.innerText = 'Error: ' + (err.message||err);
+    throw err;
+  }
+}
+
+function populateNeoSelect(list){
+  const sel = document.getElementById('neo-list');
+  sel.innerHTML = '';
+  if(!list || list.length === 0){ sel.innerHTML = '<option>No hay NEOs cargados</option>'; return; }
+  list.forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n.id;
+    opt.textContent = `${n.name} (${n.designation || ''}) — approx ${ (n.estimated_diameter && n.estimated_diameter.meters) ? ((n.estimated_diameter.meters.estimated_diameter_max).toFixed(1)+' m') : 'N/A' }`;
+    sel.appendChild(opt);
+  });
+}
+
+/* ============================
+   Interfaz y lógica
+   ============================ */
+const map = L.map('map').setView([20,0],2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'© OSM'}).addTo(map);
+
+document.getElementById('center-world').onclick = ()=> map.setView([20,0],2);
+document.getElementById('clear-map').onclick = ()=>{
+  map.eachLayer(layer => {
+    if(layer instanceof L.Marker || layer instanceof L.Circle || layer instanceof L.Polyline) {
+      map.removeLayer(layer);
+    }
+  });
+};
+
+// UI tab logic
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=> {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  };
+});
+
+// Click on map: used for manual meteorito placement
+let manualMarker = null;
+map.on('click', e=>{
+  const activeManual = document.getElementById('manual').classList.contains('active');
+  if(!activeManual) return; // only for manual mode
+  const {lat,lng} = e.latlng;
+  if(manualMarker) map.removeLayer(manualMarker);
+  manualMarker = L.marker([lat,lng]).addTo(map).bindPopup('Meteorito manual (posición)').openPopup();
+  document.getElementById('manual-output').innerHTML = `Posición manual situada en mapa: ${lat.toFixed(4)}, ${lng.toFixed(4)}. Pulsa \"Simular meteorito manual\" para evaluar.`;
+});
+
+/* NEOS load button: Loads next page on every click */
+document.getElementById('load-neos').onclick = async ()=>{
+  const progressEl = document.getElementById('neo-progress');
+  progressEl.style.display = 'block';
+  progressEl.innerText = 'Iniciando...';
+  try{
+    if(currentNeoPage === 0 && aggregatedNEOs.length === 0){
+      try{
+        const ls = localStorage.getItem('neo_aggregated');
+        if(ls){
+          const obj = JSON.parse(ls);
+          if(obj && obj.data && Array.isArray(obj.data)){
+            aggregatedNEOs = obj.data;
+            populateNeoSelect(aggregatedNEOs);
+            progressEl.innerText = `Cargados desde cache: ${aggregatedNEOs.length} NEOs.`;
+          }
+        }
+      }catch(e){}
+    }
+    const newNeos = await loadNextNeosPage(progressEl);
+    populateNeoSelect(aggregatedNEOs);
+
+    if(totalNeoPages !== null && currentNeoPage >= totalNeoPages){
+      document.getElementById('load-neos').disabled = true;
+      progressEl.innerText += ' (No hay más páginas)';
+    }
+  }catch(err){
+    progressEl.innerText = 'Error: ' + (err.message||err);
+  }
+};
+
+/* search filter */
+document.getElementById('neo-search').addEventListener('input', e=>{
+  const q = e.target.value.trim().toLowerCase();
+  if(!aggregatedNEOs || aggregatedNEOs.length === 0) return;
+  const filtered = aggregatedNEOs.filter(n => n.name && n.name.toLowerCase().includes(q));
+  populateNeoSelect(filtered);
+});
+
+/* On select NEO -> fetch details from NeoWs and attempt to compute impact point automatically */
+let lastNeoDetails = null;
+document.getElementById('neo-list').addEventListener('change', async (e)=>{
+  const id = e.target.value;
+  if(!id) return;
+  const infoEl = document.getElementById('neo-details');
+  infoEl.innerHTML = 'Cargando detalles...';
+  try{
+    const apiKey = 'DEMO_KEY';
+    const data = await cachedFetch(`https://api.nasa.gov/neo/rest/v1/neo/${id}?api_key=${apiKey}`, 'neo_' + id);
+    lastNeoDetails = data;
+    const avg = data.estimated_diameter && data.estimated_diameter.meters ? ( (data.estimated_diameter.meters.estimated_diameter_min + data.estimated_diameter.meters.estimated_diameter_max)/2 ) : null;
+    const hazardous = data.is_potentially_hazardous_asteroid ? 'Sí' : 'No';
+    let html = `<b>${data.name} (${data.id})</b><br/>Diámetro estimado: ${ avg ? avg.toFixed(1)+' m' : 'N/D' }<br/>¿Potencialmente peligroso?: ${hazardous}<br/>`;
+    const cad = (data.close_approach_data || []).find(c => c.orbiting_body === 'Earth') || (data.close_approach_data && data.close_approach_data[0]);
+    if(!cad){
+      html += '<div class="muted">No hay datos de acercamiento a la Tierra en los registros.</div>';
+      infoEl.innerHTML = html;
+      return;
+    }
+    const approachDate = cad.close_approach_date_full || cad.close_approach_date;
+    html += `<div style="margin-top:6px"><b>Close approach:</b> ${approachDate}<br/>Miss distance: ${cad.miss_distance.kilometers} km<br/>Velocidad relativa: ${parseFloat(cad.relative_velocity.kilometers_per_second).toFixed(3)} km/s</div>`;
+    infoEl.innerHTML = html + '<div style="margin-top:6px">Calculando punto de mínima distancia (aprox.) — esto puede tardar un momento...</div>';
+    const approx = await computeApproxImpactPoint(data, cad);
+    if(!approx){
+      infoEl.innerHTML += '<div class="muted">No se pudo determinar punto aproximado (datos orbitales incompletos).</div>';
+      return;
+    }
+    let resHtml = '';
+    if(approx.impact){
+      resHtml += `<p style="color:var(--danger)"><b>Impacto estimado</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (estimado)</p>`;
+    } else {
+      resHtml += `<p><b>Punto de mínima distancia sobre el globo</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (distancia mínima ${Math.round(approx.distance_km).toLocaleString()} km)</p>`;
+    }
+    resHtml += `<p>Prob. heurística de impacto: ${approx.probability}% — método: basado en miss_distance (ver nota)</p>`;
+    infoEl.innerHTML = html + resHtml;
+    if(approx && approx.lat != null && approx.lon != null){
+      map.eachLayer(layer=>{
+        if(layer instanceof L.Marker && layer !== manualMarker) map.removeLayer(layer);
+        if(layer instanceof L.Circle) map.removeLayer(layer);
+      });
+      const marker = L.marker([approx.lat, approx.lon]).addTo(map).bindPopup(approx.impact ? 'Impacto estimado (aprox)' : 'Cercano: punto de mínima distancia').openPopup();
+      const blastRadius = computeImpact({diameter: avg || 50, velocity: parseFloat(cad.relative_velocity.kilometers_per_second || 20), density: 3000, angle:45}).blast_km;
+      L.circle([approx.lat, approx.lon], {radius: blastRadius*1000, color:'#b33', opacity:0.25}).addTo(map);
+      map.setView([approx.lat, approx.lon], 5);
+      try {
+        const diameterForImpact = avg || 50; // metros
+        const velocityForImpact = parseFloat(cad.relative_velocity && cad.relative_velocity.kilometers_per_second) || 20; // km/s
+        const densityForImpact = 3000; // kg/m^3 (valor por defecto)
+        const angleForImpact = 45; // grados (heurístico)
+        const impactParams = {
+          diameter: diameterForImpact,
+          velocity: velocityForImpact,
+          density: densityForImpact,
+          angle: angleForImpact,
+          lat: approx.lat,
+          lon: approx.lon
+        };
+        const out = computeImpact(impactParams);
+        const elev = await getElevation(approx.lat, approx.lon);
+        const quakes = await getRecentQuakes(approx.lat, approx.lon, 400);
+        const pop = estimateAffected(out.blast_km, elev, approx.lat, approx.lon);
+        const modalHtml = `
+          <p><b>Impacto estimado — NEO:</b> ${data.name} (${data.id})</p>
+          <ul>
+            <li><b>Fecha aproximada de acercamiento:</b> ${approachDate || 'N/D'}</li>
+            <li><b>Lat/Lon (sub-satélite aproximado):</b> ${approx.lat.toFixed(4)}, ${approx.lon.toFixed(4)}</li>
+            <li><b>Distancia geocéntrica (aprox.):</b> ${Math.round(approx.distance_km).toLocaleString()} km</li>
+            <li><b>Prob. heurística de impacto:</b> ${approx.probability}%</li>
+            <li><b>Diámetro estimado usado:</b> ${diameterForImpact.toFixed(1)} m</li>
+            <li><b>Velocidad relativa usada:</b> ${velocityForImpact.toFixed(3)} km/s</li>
+            <li><b>Energía:</b> ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)</li>
+            <li><b>Diámetro cráter (est):</b> ${Math.round(out.D_tr)} m</li>
+            <li><b>Radio blast (aprox):</b> ${out.blast_km.toFixed(2)} km</li>
+            <li><b>Elevación (USGS EPQS):</b> ${elev !== null ? elev + ' m' : 'No disponible'}</li>
+            <li><b>Población estimada afectada:</b> ${pop.affected.toLocaleString()} (heurística)</li>
+            <li><b>Terremotos recientes (30 días, 400 km):</b> ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
+          </ul>
+          <p style="font-size:0.9rem;color:#666">Nota: todos los números son aproximados — el propagador orbital y las heurísticas son simplificaciones.</p>
+        `;
+        openModal(modalHtml);
+      } catch(modErr) {
+        console.warn('No se pudo mostrar modal NEO:', modErr);
+      }
+
+    }
+  }catch(err){
+    console.error(err);
+    document.getElementById('neo-details').innerHTML = 'Error cargando detalles: ' + (err.message||err);
+  }
+});
+
+/* computeApproxImpactPoint: unchanged */
+async function computeApproxImpactPoint(neoData, closeApproach){
+  try{
+    if(!neoData.orbital_data) return null;
+    const od = neoData.orbital_data;
+    const epoch = parseFloat(od.epoch_osculation) || 2451545.0;
+    let cadDateStr = closeApproach.close_approach_date_full || closeApproach.close_approach_date;
+    let targetDate = cadDateStr.includes(':') ? new Date(cadDateStr + 'Z') : new Date(cadDateStr + 'T00:00:00Z');
+    const targetJD = dateToJD(targetDate);
+    const a = parseFloat(od.semi_major_axis);
+    const e = parseFloat(od.eccentricity);
+    const i = parseFloat(od.inclination);
+    const Omega = parseFloat(od.longitude_of_ascending_node);
+    const omega = parseFloat(od.argument_of_perihelion);
+    const M = parseFloat(od.mean_anomaly);
+    const helio = orbitalElementsToHelioEcl(a,e,i,Omega,omega,M, epoch, targetJD);
+    const earth = earthHeliocentricPosJD(targetJD);
+    const gx = helio.x - earth.x;
+    const gy = helio.y - earth.y;
+    const gz = helio.z - earth.z;
+    const distAU = Math.sqrt(gx*gx + gy*gy + gz*gz);
+    const distKm = distAU * AU_KM;
+    const eq = eclToEq(gx, gy, gz);
+    const radec = vecToRADec(eq.x, eq.y, eq.z);
+    const gmst = gmstDegrees(targetJD);
+    const sub = radDecToLatLon(radec.ra, radec.dec, targetJD);
+    const miss_km = parseFloat(closeApproach.miss_distance.kilometers);
+    let probability = 0;
+    if(!isNaN(miss_km)){
+      if(miss_km <= EARTH_RADIUS_KM) probability = 100;
+      else{
+        const threshold = 2000; // km
+        probability = Math.max(0, Math.round( Math.max(0, (threshold - miss_km)/threshold * 10000)/100 ));
+      }
+    } else {
+      probability = 0;
+    }
+    const impact = distKm <= EARTH_RADIUS_KM + 50; // small buffer
+    return {impact, lat: sub.lat, lon: sub.lon, distance_km: distKm, probability};
+  }catch(e){
+    console.warn('Error computeApproxImpactPoint', e);
+    return null;
+  }
+}
+
+/* Impact physics (reused) */
+function computeImpact(params){
+  const d = Number(params.diameter);
+  const v = Number(params.velocity) * 1000;
+  const rho = Number(params.density || 3000);
+  const r = d/2;
+  const volume = (4/3) * Math.PI * Math.pow(r,3);
+  const mass = volume * rho;
+  const E = 0.5 * mass * v * v;
+  const tnt_kilotons = E / 4.184e12;
+  const tnt_megatons = tnt_kilotons / 1000;
+  const D_tr = 1000 * Math.pow(Math.max(tnt_megatons,1e-9), 1/3);
+  const blast_km = Math.max(0.1, Math.pow(Math.max(tnt_megatons,1e-9), 1/3) * 10);
+  return {mass, E, tnt_kilotons, tnt_megatons, D_tr, blast_km};
+}
+
+/* ============================
+   Manual meteor simulation
+   ============================ */
+document.getElementById('simulate-manual').onclick = async ()=>{
+  if(!manualMarker){
+    alert('Coloca el meteorito manual haciendo click en el mapa (pestaña Manual).');
+    return;
+  }
+  const diameter = Number(document.getElementById('m_diameter').value);
+  const velocity = Number(document.getElementById('m_velocity').value);
+  const density = Number(document.getElementById('m_density').value);
+  const angle = Number(document.getElementById('m_angle').value);
+  const latlng = manualMarker.getLatLng();
+  const params = {diameter, velocity, density, angle, lat: latlng.lat, lon: latlng.lng};
+  const out = computeImpact(params);
+  const elev = await getElevation(params.lat, params.lon);
+  const quakes = await getRecentQuakes(params.lat, params.lon, 400);
+  const pop = estimateAffected(out.blast_km, elev, params.lat, params.lon);
+  document.getElementById('manual-output').innerHTML = `<strong>Resultados (manual)</strong><br/>Energía: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)<br/>Elevación: ${elev !== null ? elev+' m' : 'N/D'}<br/>Población afectada (estimada): ${pop.affected.toLocaleString()}`;
+  const html = `<p><b>Impacto manual — ubicación:</b> ${params.lat.toFixed(4)}, ${params.lon.toFixed(4)}</p>
+    <ul>
+      <li>Energía: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt)</li>
+      <li>Diámetro cráter (est): ${Math.round(out.D_tr)} m</li>
+      <li>Radio blast (aprox): ${out.blast_km.toFixed(2)} km</li>
+      <li>Elevación (USGS EPQS): ${elev !== null ? elev + ' m' : 'No disponible'}</li>
+      <li>Población estimada afectada: ${pop.affected.toLocaleString()} (heurística)</li>
+      <li>Terremotos recientes (30 días, 400 km): ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
+    </ul>`;
+  openModal(html);
+  L.circle([params.lat, params.lon], {radius: out.blast_km*1000, color:'#b33', opacity:0.25}).addTo(map);
+};
+
+/* ============================
+   Simple USGS helpers
+   ============================ */
+async function getElevation(lat, lon){
+  try{
+    const url = `https://epqs.nationalmap.gov/v1/json?x=${lon}&y=${lat}&units=Meters&wkid=4326`;
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const j = await res.json();
+    if(j && j.value && j.value.length>0) return j.value[0].elevation;
+    return null;
+  }catch(e){ return null; }
+}
+async function getRecentQuakes(lat, lon, maxradiuskm=400){
+  try{
+    const end = new Date();
+    const start = new Date(end.getTime() - 30*24*3600*1000);
+    const url = `https://earthquake.usgs.gov/fdsnws/event/1/query.geojson?format=geojson&starttime=${start.toISOString()}&endtime=${end.toISOString()}&latitude=${lat}&longitude=${lon}&maxradiuskm=${maxradiuskm}`;
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const j = await res.json();
+    return j;
+  }catch(e){ return null; }
+}
+
+/* estimateAffected: updated to avoid exceeding world population and to be more conservative */
+function estimateAffected(blast_km, elevation, lat=null, lon=null){
+  // blast_km: radius in kilometers
+  const area_km2 = Math.PI * Math.pow(blast_km, 2);
+
+  // Heuristic local population density (people/km2) based on elevation and general habitability.
+  // These are coarse approximations intended for educational/demo use only.
+  let density;
+  if(elevation === null){
+    // unknown elevation -> fallback to conservative global average
+    density = 30; // people per km2 (global average order of magnitude)
+  } else if(elevation < 10){
+    density = 500; // coastal/lowland (can be high in urban coasts)
+  } else if(elevation < 200){
+    density = 150; // low hills / agricultural regions
+  } else if(elevation < 1000){
+    density = 30; // higherlands, less dense
+  } else {
+    density = 5; // mountainous / sparsely populated
+  }
+
+  // Raw estimate using local density
+  const rawAffected = Math.round(area_km2 * density);
+
+  // Upper bound based on maximum fraction of world population that could be inside that area.
+  // This avoids returning numbers > world population and scales sensibly with huge blast radii.
+  const areaFractionOfLand = Math.min(1, area_km2 / EARTH_LAND_AREA_KM2);
+  const maxAffectedByArea = Math.round(WORLD_POPULATION * areaFractionOfLand);
+
+  // Final affected: not exceeding raw local estimate nor the theoretical maximum based on land area,
+  // and obviously not exceeding total world population.
+  const affected = Math.min(rawAffected, maxAffectedByArea, WORLD_POPULATION);
+
+  return {area_km2, density, affected};
+}
+
+/* Modal open/close */
+function openModal(html){
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal').style.display = 'flex';
+}
+document.getElementById('modal-close').onclick = ()=>{ document.getElementById('modal').style.display = 'none'; };
+
+/* Export button: export current context */
+document.getElementById('export-btn').onclick = async ()=>{
+  const activeNEO = document.getElementById('neos').classList.contains('active');
+  let payload = {timestamp: new Date().toISOString()};
+  if(activeNEO){
+    const sel = document.getElementById('neo-list');
+    const id = sel.value;
+    if(!id){ alert('Selecciona un NEO antes de exportar.'); return; }
+    const apiKey = 'DEMO_KEY';
+    const neoData = await cachedFetch(`https://api.nasa.gov/neo/rest/v1/neo/${id}?api_key=${apiKey}`, 'neo_'+id);
+    payload.neo = neoData;
+    const cad = (neoData.close_approach_data || []).find(c => c.orbiting_body==='Earth') || neoData.close_approach_data && neoData.close_approach_data[0];
+    if(cad){
+      const approx = await computeApproxImpactPoint(neoData, cad);
+      payload.impact_estimate = approx;
+    }
+  } else {
+    if(!manualMarker){ alert('No hay meteorito manual situado.'); return; }
+    const latlng = manualMarker.getLatLng();
+    payload.manual = {
+      lat: latlng.lat,
+      lon: latlng.lng,
+      diameter: Number(document.getElementById('m_diameter').value),
+      velocity: Number(document.getElementById('m_velocity').value),
+      density: Number(document.getElementById('m_density').value),
+      angle: Number(document.getElementById('m_angle').value)
+    };
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.getElementById('download');
+  a.href = url; a.download = 'impact_export.json'; a.textContent = 'Descargar export_simulation.json';
+  a.click();
+};
+
+  </script>
+</body>
+</html>
