@@ -380,7 +380,6 @@ map.on('click', e=>{
 /* NEOS load button */
 let aggregatedNEOs = []; // cached aggregated results
 document.getElementById('load-neos').onclick = async ()=>{
-  const loadAll = document.getElementById('load-all').checked;
   const progressEl = document.getElementById('neo-progress');
   progressEl.style.display = 'block';
   progressEl.innerText = 'Iniciando...';
@@ -672,6 +671,7 @@ document.getElementById('export-btn').onclick = async ()=>{
   </script>
 </body>
 </html>
+
 
 
 
