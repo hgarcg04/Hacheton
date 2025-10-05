@@ -433,7 +433,7 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
         if(layer instanceof L.Marker && layer !== manualMarker) map.removeLayer(layer);
         if(layer instanceof L.Circle) map.removeLayer(layer);
       });
-      const marker = L.marker([approx.lat, approx.lon]).addTo(map).bindPopup(approx.impact ? 'Impacto estimado (aprox)' : 'Cercano: punto de mínima distancia').openPopup();
+      const marker = L.marker([approx.lat, approx.lon]).addTo(map).bindPopup(approx.impact ? 'Impacto estimado (aprox)' : 'Approach: minimum distance point').openPopup();
       const blastRadius = computeImpact({diameter: avg || 50, velocity: parseFloat(cad.relative_velocity.kilometers_per_second || 20), density: 3000, angle:45}).blast_km;
       L.circle([approx.lat, approx.lon], {radius: blastRadius*1000, color:'#b33', opacity:0.25}).addTo(map);
       map.setView([approx.lat, approx.lon], 5);
