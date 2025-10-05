@@ -422,11 +422,11 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
     }
     let resHtml = '';
     if(approx.impact){
-      resHtml += `<p style="color:var(--danger)"><b>Estimated impact</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (estimado)</p>`;
+      resHtml += `<p style="color:var(--danger)"><b>Estimated impact</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (estimated)</p>`;
     } else {
       resHtml += `<p><b>Minimum distance point above the globe</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (Minimum distance ${Math.round(approx.distance_km).toLocaleString()} km)</p>`;
     }
-    resHtml += `<p>Prob. heurística de impacto: ${approx.probability}% — método: basado en miss_distance (ver nota)</p>`;
+    resHtml += `<p>Prob. heuristic of impact: ${approx.probability}% — method: based on miss_distance</p>`;
     infoEl.innerHTML = html + resHtml;
     if(approx && approx.lat != null && approx.lon != null){
       map.eachLayer(layer=>{
