@@ -80,19 +80,19 @@
         <!-- NEOS (reales) -->
         <div id="neos" class="tab-content active">
           <div style="display:flex;gap:8px">
-            <button class="btn" id="load-neos">Cargar más NEOs (página siguiente)</button>
+            <button class="btn" id="load-neos">Download more NEOs (next page)</button>
           </div>
 
           <div class="progress" id="neo-progress" style="display:none"></div>
 
-          <label style="margin-top:8px">Buscar por nombre (filtrar resultados ya cargados)</label>
-          <input id="neo-search" placeholder="Escribe parte del nombre..." />
+          <label style="margin-top:8px">Search by name (filter results already downloaded)</label>
+          <input id="neo-search" placeholder="Write partially the name..." />
 
-          <label style="margin-top:8px">Lista NEOS (seleccionar)</label>
+          <label style="margin-top:8px">NEOS list (select)</label>
           <select id="neo-list" size="8" style="width:100%"></select>
 
           <div id="neo-details" class="result muted" style="margin-top:8px">Selecciona un NEO para ver detalles y estimación de punto de impacto.</div>
-          <div class="muted" style="margin-top:6px">Nota: el cálculo del punto de impacto es una aproximación (propagador Kepleriano simplificado).</div>
+          <div class="muted" style="margin-top:6px">Important: the math of the point of impact is an aprox (simplified Keplerian propagator).</div>
         </div>
        <!-- Manual -->
         <div id="manual" class="tab-content">
@@ -118,7 +118,7 @@
     </section>
 
     <footer style="margin-top:12px" class="muted">
-      Demo educativa — Para producción se recomienda mover la carga masiva de NEOS a un backend con caché y control de tasa.
+      Hacheton's property
     </footer>
   </main>
 
@@ -683,3 +683,4 @@ document.getElementById('export-btn').onclick = async ()=>{
   </script>
 </body>
 </html>
+
