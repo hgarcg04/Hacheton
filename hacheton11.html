@@ -398,14 +398,14 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
   const id = e.target.value;
   if(!id) return;
   const infoEl = document.getElementById('neo-details');
-  infoEl.innerHTML = 'Cargando detalles...';
+  infoEl.innerHTML = 'Loading details...';
   try{
     const apiKey = 'DEMO_KEY';
     const data = await cachedFetch(`https://api.nasa.gov/neo/rest/v1/neo/${id}?api_key=${apiKey}`, 'neo_' + id);
     lastNeoDetails = data;
     const avg = data.estimated_diameter && data.estimated_diameter.meters ? ( (data.estimated_diameter.meters.estimated_diameter_min + data.estimated_diameter.meters.estimated_diameter_max)/2 ) : null;
     const hazardous = data.is_potentially_hazardous_asteroid ? 'Sí' : 'No';
-    let html = `<b>${data.name} (${data.id})</b><br/>Diámetro estimado: ${ avg ? avg.toFixed(1)+' m' : 'N/D' }<br/>¿Potencialmente peligroso?: ${hazardous}<br/>`;
+    let html = `<b>${data.name} (${data.id})</b><br/>Diámetro estimado: ${ avg ? avg.toFixed(1)+' m' : 'N/D' }<br/>¿Potentially dangerous?: ${hazardous}<br/>`;
     const cad = (data.close_approach_data || []).find(c => c.orbiting_body === 'Earth') || (data.close_approach_data && data.close_approach_data[0]);
     if(!cad){
       html += '<div class="muted">There is no data of approachment to the Earth.</div>';
@@ -424,7 +424,7 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
     if(approx.impact){
       resHtml += `<p style="color:var(--danger)"><b>Estimated impact</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (estimado)</p>`;
     } else {
-      resHtml += `<p><b>Punto de mínima distancia sobre el globo</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (distancia mínima ${Math.round(approx.distance_km).toLocaleString()} km)</p>`;
+      resHtml += `<p><b>Minimum distance point above the globe</b> — Lat: ${approx.lat.toFixed(4)}, Lon: ${approx.lon.toFixed(4)} (Minimum distance ${Math.round(approx.distance_km).toLocaleString()} km)</p>`;
     }
     resHtml += `<p>Prob. heurística de impacto: ${approx.probability}% — método: basado en miss_distance (ver nota)</p>`;
     infoEl.innerHTML = html + resHtml;
@@ -433,7 +433,7 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
         if(layer instanceof L.Marker && layer !== manualMarker) map.removeLayer(layer);
         if(layer instanceof L.Circle) map.removeLayer(layer);
       });
-      const marker = L.marker([approx.lat, approx.lon]).addTo(map).bindPopup(approx.impact ? 'Impacto estimado (aprox)' : 'Approach: minimum distance point').openPopup();
+      const marker = L.marker([approx.lat, approx.lon]).addTo(map).bindPopup(approx.impact ? 'Estimated distance (aprox)' : 'Approach: minimum distance point').openPopup();
       const blastRadius = computeImpact({diameter: avg || 50, velocity: parseFloat(cad.relative_velocity.kilometers_per_second || 20), density: 3000, angle:45}).blast_km;
       L.circle([approx.lat, approx.lon], {radius: blastRadius*1000, color:'#b33', opacity:0.25}).addTo(map);
       map.setView([approx.lat, approx.lon], 5);
@@ -441,7 +441,7 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
         const diameterForImpact = avg || 50; // metros
         const velocityForImpact = parseFloat(cad.relative_velocity && cad.relative_velocity.kilometers_per_second) || 20; // km/s
         const densityForImpact = 3000; // kg/m^3 (valor por defecto)
-        const angleForImpact = 45; // grados (heurístico)
+        const angleForImpact = 45; // grados (heuristicc)
         const impactParams = {
           diameter: diameterForImpact,
           velocity: velocityForImpact,
@@ -550,7 +550,7 @@ function computeImpact(params){
    ============================ */
 document.getElementById('simulate-manual').onclick = async ()=>{
   if(!manualMarker){
-    alert('Select a point on the map making click to simulate the impact of the manual meteorite.');
+    alert('Select a point on the map clicking to simulate the impact of the manual meteorite.');
     return;
   }
   const diameter = Number(document.getElementById('m_diameter').value);
