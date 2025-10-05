@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mitigation of Consequences</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    :root{--accent:#0b74da;--ok:#2b9348;--danger:#b33}
+    body{font-family:Inter,system-ui,Segoe UI,Helvetica,Arial;margin:0;background:#f3f6fb;color:#06263b}
+    header{background:#9ad7d1;padding:14px}
+    .container{max-width:1100px;margin:12px auto;padding:0 16px}
+    h1{margin:0;font-size:3rem; font-family: Verdana, Geneva, Tahoma, sans-serif; text-align:center}
+    .grid{display:grid;grid-template-columns:1fr 420px;gap:12px}
+    .card{background:white;border-radius:10px;padding:30px;box-shadow:0 6px 18px rgba(8,20,40,0.06)}
+    #map{height:520px;border-radius:8px}
+    label{display:block;font-size:1.2rem;margin-top:8px}
+    input, select, textarea, button{font-family:inherit}
+    input, select, textarea{width:100%;padding:8px;border-radius:6px;border:1px solid #ddd;margin-top:6px}
+    .btn{background:#09665e;color:white;padding:8px 10px;border-radius:8px;border:none;cursor:pointer;font-size: 1rem;margin-top:8px}
+    .btn.alt{background:#d758bb}
+    .small{font-size:0.85rem;color:#334}
+    .muted{font-size:1.5rem;color:#667}
+    .tabs{display:flex;gap:8px;margin-top:8px}
+    .tab-btn{flex:1;text-align:center;padding:8px;border:none;cursor:pointer;border-radius:6px 6px 0 0; font-size: 1rem}
+    .tab-btn.active{background:#d758bb;color:#fff; font-size: 1rem}
+    .tab-content{display:none;border:1px solid #ddd;border-top:none;padding:8px;border-radius:0 0 6px 6px}
+    .tab-content.active{display:block}
+    .result{background:#eef7ff;padding:8px;border-radius:6px;margin-top:8px}
+    .progress{font-size:0.85rem;color:#444;margin-top:6px}
+    /* Modal */
+    .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(4,12,20,0.45);align-items:center;justify-content:center;z-index:9999}
+    .modal{background:white;padding:18px;border-radius:10px;max-width:900px;width:95%;max-height:85vh;overflow:auto;box-shadow:0 12px 40px rgba(2,10,30,0.45)}
+    .modal h3{margin-top:0}
+    pre{background:#0b1b2a;color:#cfe8ff;padding:8px;border-radius:6px;overflow:auto}
+     /*Línea azul de fondo del menú */
+    .navbar {background: #09665e;border-top: 0px solid #09665e;border-bottom: 10px solid #09665e;}
+    .nav-menu {list-style: none;display: flex;justify-content: center;gap: 25px;padding: 10px 0;margin: 0;}
+    .nav-menu a {color: #ffffff;text-decoration: none;font-weight: 500;transition: color 0.2s; padding-bottom: 3px;}
+    .nav-menu a:hover {color: #000000}
+    .uno{padding:10px; font-size: 1.8rem; margin-right:5px; margin-left:5px}
+    h1 {text-align: center;color: #000;}
+    p {margin-bottom: 16px;}
+    strong {color: #000;}
+    em {color: #000566;}
+    blockquote {border-left: 4px solid #000566;padding-left: 15px;margin: 20px 0;color: #000566;font-style: italic;}
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <ul class="nav-menu">
+      <li><a href="#">Home</a></li>
+      <li><a href="#">Mission</a></li>
+      <li><a href="#">Projects</a></li>
+      <li><a href="#">Team</a></li>
+    </ul>
+  </header>
+
+  <div class="container">
+    <div class="card uno">
+      <h1>Mitigation of Consequences<br><em>(If the Impact Is Inevitable or Imminent)</em></h1>
+      
+      <p>When an asteroid impact cannot be prevented or deflected, the focus shifts toward minimizing its effects on human life, infrastructure, and the environment. Mitigation efforts combine scientific observation, emergency planning, and international cooperation to ensure the most effective response possible.</p>
+
+      <h2>1. Risk Mapping and Monitoring</h2>
+      <p>Continuous detection and tracking of Near-Earth Objects (NEOs) are essential to assess potential threats. Programs such as <strong>NEO Surveyor</strong> and <strong>Pan-STARRS</strong> play a crucial role in identifying hazardous asteroids early, mapping their trajectories, and estimating potential impact zones. This data forms the foundation for timely alerts and informed decision-making.</p>
+
+      <h2>2. Regional Evacuation Plans</h2>
+      <p>For predicted small to medium-scale impacts, regional authorities must be prepared to activate <strong>evacuation and sheltering protocols</strong>. These plans involve establishing safe zones, emergency transportation routes, and temporary shelters equipped with medical and communication resources to ensure the protection of affected populations.</p>
+
+      <h2>3. Protection of Critical Infrastructure</h2>
+      <p>Advanced simulations can help reinforce <strong>key facilities</strong> such as power plants, hospitals, and communication networks. Strengthening these systems ensures that essential services remain operational during and after the event, supporting rescue operations and recovery efforts.</p>
+
+      <h2>4. Education and International Protocols</h2>
+      <p>Global coordination is vital. Agencies such as the <strong>United Nations Office for Outer Space Affairs (UNOOSA)</strong> and NASA’s <strong>Planetary Defense Coordination Office (PDCO)</strong> lead efforts to develop standardized response frameworks, share information, and promote public awareness. Education initiatives help societies understand risks, prepare effectively, and respond calmly to emergency advisories.</p>
+
+      <blockquote>
+        “Preparedness, coordination, and knowledge-sharing are humanity’s strongest shields against cosmic uncertainty.”
+      </blockquote>
+    </div>
+  </div>
+
+</body>
+</html>
