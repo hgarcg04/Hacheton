@@ -125,8 +125,8 @@
   <!-- Modal de evaluación de riesgos -->
   <div id="modal" class="modal-backdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:9999">
     <div class="modal">
-      <button id="modal-close" style="float:right;border:none;background:#eee;border-radius:6px;padding:6px;cursor:pointer">Cerrar</button>
-      <h3>Evaluación de riesgos (USGS + estimaciones)</h3>
+      <button id="modal-close" style="float:right;border:none;background:#eee;border-radius:6px;padding:6px;cursor:pointer">Close</button>
+      <h3>Risk evaluation (USGS + estimations)</h3>
       <div id="modal-body"></div>
     </div>
   </div>
@@ -455,20 +455,20 @@ document.getElementById('neo-list').addEventListener('change', async (e)=>{
         const quakes = await getRecentQuakes(approx.lat, approx.lon, 400);
         const pop = estimateAffected(out.blast_km, elev, approx.lat, approx.lon);
         const modalHtml = `
-          <p><b>Impacto estimado — NEO:</b> ${data.name} (${data.id})</p>
+          <p><b>Estimated impact — NEO:</b> ${data.name} (${data.id})</p>
           <ul>
-            <li><b>Fecha aproximada de acercamiento:</b> ${approachDate || 'N/D'}</li>
-            <li><b>Lat/Lon (sub-satélite aproximado):</b> ${approx.lat.toFixed(4)}, ${approx.lon.toFixed(4)}</li>
-            <li><b>Distancia geocéntrica (aprox.):</b> ${Math.round(approx.distance_km).toLocaleString()} km</li>
-            <li><b>Prob. heurística de impacto:</b> ${approx.probability}%</li>
-            <li><b>Diámetro estimado usado:</b> ${diameterForImpact.toFixed(1)} m</li>
-            <li><b>Velocidad relativa usada:</b> ${velocityForImpact.toFixed(3)} km/s</li>
-            <li><b>Energía:</b> ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)</li>
-            <li><b>Diámetro cráter (est):</b> ${Math.round(out.D_tr)} m</li>
+            <li><b>Aprox date of approach:</b> ${approachDate || 'N/D'}</li>
+            <li><b>Lat/Lon (sub-satelite aprox):</b> ${approx.lat.toFixed(4)}, ${approx.lon.toFixed(4)}</li>
+            <li><b>Geocentric distance (aprox.):</b> ${Math.round(approx.distance_km).toLocaleString()} km</li>
+            <li><b>Heuristic probability of impact:</b> ${approx.probability}%</li>
+            <li><b>Estimated diameter used:</b> ${diameterForImpact.toFixed(1)} m</li>
+            <li><b>Relative velocity used:</b> ${velocityForImpact.toFixed(3)} km/s</li>
+            <li><b>Energy:</b> ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)</li>
+            <li><b>Crater diameter (est):</b> ${Math.round(out.D_tr)} m</li>
             <li><b>Radio blast (aprox):</b> ${out.blast_km.toFixed(2)} km</li>
-            <li><b>Elevación (USGS EPQS):</b> ${elev !== null ? elev + ' m' : 'No disponible'}</li>
-            <li><b>Población estimada afectada:</b> ${pop.affected.toLocaleString()} (heurística)</li>
-            <li><b>Terremotos recientes (30 días, 400 km):</b> ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
+            /* <li><b>Elevatin (USGS EPQS):</b> ${elev !== null ? elev + ' m' : 'No disponible'}</li> -->*/
+            <li><b>Estimate population affected:</b> ${pop.affected.toLocaleString()} (heuristic)</li>
+            <li><b>Recent earthquakes (30 days, 400 km):</b> ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
           </ul>
           <p style="font-size:0.9rem;color:#666">Nota: todos los números son aproximados — el propagador orbital y las heurísticas son simplificaciones.</p>
         `;
@@ -566,12 +566,12 @@ document.getElementById('simulate-manual').onclick = async ()=>{
   document.getElementById('manual-output').innerHTML = `<strong>Resultados (manual)</strong><br/>Energía: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt TNT)<br/>Elevación: ${elev !== null ? elev+' m' : 'N/D'}<br/>Población afectada (estimada): ${pop.affected.toLocaleString()}`;
   const html = `<p><b>Impacto manual — ubicación:</b> ${params.lat.toFixed(4)}, ${params.lon.toFixed(4)}</p>
     <ul>
-      <li>Energía: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt)</li>
-      <li>Diámetro cráter (est): ${Math.round(out.D_tr)} m</li>
+      <li>Energy: ${Number(out.E).toExponential(3)} J (~${out.tnt_megatons.toFixed(3)} Mt)</li>
+      <li>Crater diamater (est): ${Math.round(out.D_tr)} m</li>
       <li>Radio blast (aprox): ${out.blast_km.toFixed(2)} km</li>
-      <li>Elevación (USGS EPQS): ${elev !== null ? elev + ' m' : 'No disponible'}</li>
-      <li>Población estimada afectada: ${pop.affected.toLocaleString()} (heurística)</li>
-      <li>Terremotos recientes (30 días, 400 km): ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
+      /*<li>Elevación (USGS EPQS): ${elev !== null ? elev + ' m' : 'No disponible'}</li>*/
+      <li>Estimated population affected: ${pop.affected.toLocaleString()} (heurística)</li>
+      <li>Recent earthquakes (30 days, 400 km): ${quakes && quakes.features ? quakes.features.length : 'No disponible'}</li>
     </ul>`;
   openModal(html);
   L.circle([params.lat, params.lon], {radius: out.blast_km*1000, color:'#b33', opacity:0.25}).addTo(map);
@@ -683,6 +683,7 @@ document.getElementById('export-btn').onclick = async ()=>{
   </script>
 </body>
 </html>
+
 
 
 
