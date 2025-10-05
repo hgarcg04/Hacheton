@@ -56,24 +56,25 @@
       <p class="muted">Two modes: <strong>real NEOs</strong> — downloads from NeoWs and makes an automatic estimation of an impact point (aprox.); <strong>Manual</strong> — select a meteorite on the map making click.</p>
     </div>
   </header>
+
   <main class="container">
     <div class="grid">
       <section class="card">
-        <h2>Mapa</h2>
+        <h2>Map</h2>
         <div id="map"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="btn alt" id="center-world">Centrar mundo</button>
-          <button class="btn" id="clear-map">Borrar capas</button>
+          <button class="btn alt" id="center-world">Center world</button>
+          <button class="btn" id="clear-map">Delate layers</button>
         </div>
-        <div id="map-hint" class="muted" style="margin-top:8px">Click en el mapa para situar un meteorito manual (pestaña Manual).</div>
+        <div id="map-hint" class="muted" style="margin-top:8px">Click on the map to situate a meteorite mannualy (Manual slide).</div>
       </section>
 
       <aside class="card">
-        <h3>Controles</h3>
+        <h3>Controls</h3>
 
         <div class="tabs">
-          <button class="tab-btn active" data-tab="neos">NEOs (reales)</button>
-          <button class="tab-btn" data-tab="manual">Meteorito manual</button>
+          <button class="tab-btn active" data-tab="neos">NEOs (reals)</button>
+          <button class="tab-btn" data-tab="manual">Manual meteorite</button>
         </div>
 
         <!-- NEOS (reales) -->
@@ -93,15 +94,14 @@
           <div id="neo-details" class="result muted" style="margin-top:8px">Selecciona un NEO para ver detalles y estimación de punto de impacto.</div>
           <div class="muted" style="margin-top:6px">Nota: el cálculo del punto de impacto es una aproximación (propagador Kepleriano simplificado).</div>
         </div>
-
-        <!-- Manual -->
+       <!-- Manual -->
         <div id="manual" class="tab-content">
-          <label>Diámetro (m)</label><input id="m_diameter" type="number" value="50" />
-          <label>Velocidad (km/s)</label><input id="m_velocity" type="number" value="20" step="0.1" />
-          <label>Densidad (kg/m³)</label><input id="m_density" type="number" value="3000" />
-          <label>Ángulo (°)</label><input id="m_angle" type="number" value="45" />
-          <p class="muted" style="margin-top:8px">Para colocar el punto de impacto, cambia a la pestaña 'Mapa' y haz click en la ubicación deseada; el marcador se asociará al meteorito manual.</p>
-          <button class="btn" id="simulate-manual">Simular meteorito manual</button>
+          <label>Diametre (m)</label><input id="m_diameter" type="number" value="50" />
+          <label>Velocity (km/s)</label><input id="m_velocity" type="number" value="20" step="0.1" />
+          <label>Density (kg/m³)</label><input id="m_density" type="number" value="3000" />
+          <label>Angle(°)</label><input id="m_angle" type="number" value="45" />
+          <p class="muted" style="margin-top:8px">To set the impact point, switch to the 'Map' tab and click on the desired location; the marker will be linked to the manual meteorite.</p>
+          <button class="btn" id="simulate-manual">Simulate manual meteorite</button>
           <div id="manual-output" class="result muted" style="margin-top:8px"></div>
         </div>
 
@@ -109,12 +109,12 @@
     </div>
 
     <section class="card" style="margin-top:12px">
-      <h3>Exportar / Compartir</h3>
+      <h3>Export / Share</h3>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn" id="export-btn">Exportar (JSON)</button>
+        <button class="btn" id="export-btn">Export (JSON)</button>
         <a id="download" style="margin-left:8px"></a>
       </div>
-      <p class="muted" style="margin-top:8px">Exporta la simulación actual (NEO seleccionado o meteorito manual) incluyendo datos NEOWS y USGS consultados cuando proceda.</p>
+      <p class="muted" style="margin-top:8px">Export the actual simulation (NEO selected or manual meteorite ) including NEOWS data and USGS, consulted when need.</p>
     </section>
 
     <footer style="margin-top:12px" class="muted">
@@ -683,6 +683,7 @@ document.getElementById('export-btn').onclick = async ()=>{
   </script>
 </body>
 </html>
+
 
 
 
